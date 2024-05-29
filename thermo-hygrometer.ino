@@ -2,17 +2,17 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <time.h>
-#include "wifi_credentials.h" // SSID and Password
-#include "ambient_credentials.h" // keys for ambient
-#include "gas_credentials.h" // keys for Google Apps Script
+#include "wifi_credentials.h"     // SSID and Password
+#include "ambient_credentials.h"  // keys for ambient
+#include "gas_credentials.h"      // keys for Google Apps Script
 
 #include <Adafruit_GFX.h>     // Core graphics library
 #include <Adafruit_ST7735.h>  // Hardware-specific library for ST7735
 #include <Adafruit_ST7789.h>  // Hardware-specific library for ST7789
 #include <SPI.h>
 
-#include <CRC8.h> // for AHT25
-#include <Wire.h> // for AHT25
+#include <CRC8.h>  // for AHT25
+#include <Wire.h>  // for AHT25
 
 #include <Ambient.h>
 
@@ -31,7 +31,7 @@
 // send data to ambient
 const bool ENABLE_AMBIENT = true;
 // send data to google apps script
-const bool ENABLE_GAS = true; 
+const bool ENABLE_GAS = true;
 
 /* FOR AHT25 */
 const int PIN_I2C_SDA = 21;
@@ -49,17 +49,17 @@ const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
 
 /* FOR Ambient */
-unsigned int channelId = AMBIENT_CHANNELID; // From ambient_credentials.h
-const char* writeKey = AMBIENT_WRITEKEY; // From ambient_credentials.h
+unsigned int channelId = AMBIENT_CHANNELID;  // From ambient_credentials.h
+const char* writeKey = AMBIENT_WRITEKEY;     // From ambient_credentials.h
 WiFiClient client;
 Ambient ambient;
 
 /* FOR Google Apps Script */
-const String gasUrl = GAS_URL; // From gas_credentials.h
+const String gasUrl = GAS_URL;  // From gas_credentials.h
 
 // ntp
 struct tm timeInfo;
-const char *dayofweek[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+const char* dayofweek[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 char year[4][6];
 char date[20], hour_minute[20];
 
@@ -94,11 +94,11 @@ void updateAht25(void) {
     delay(80);
     Wire.requestFrom(AHT25_ADDR, 7);
     if (Wire.available() >= 7) {
-      for(int i=0; i<7; i++) {
+      for (int i = 0; i < 7; i++) {
         buf[i] = Wire.read();
       }
     }
-  } while((buf[0] & 0x80) != 0);
+  } while ((buf[0] & 0x80) != 0);
 
   crc.restart();
   crc.add(buf, 6);
@@ -119,14 +119,14 @@ void updateAht25(void) {
 
 /* SHOW time and date */
 void show_time(bool kougo) {
-  getLocalTime(&timeInfo);    //tmオブジェクトのtimeInfoに現在時刻を入れ込む
+  getLocalTime(&timeInfo);  //tmオブジェクトのtimeInfoに現在時刻を入れ込む
   sprintf(year[0], "%04d/", timeInfo.tm_year + 1900);
   sprintf(date, "%02d/%02d", timeInfo.tm_mon + 1, timeInfo.tm_mday);  //日付に変換
   // 交互に. を表示したりけしたりする．
-  if (kougo){
-    sprintf(hour_minute, "%02d:%02d.", timeInfo.tm_hour, timeInfo.tm_min); //時間に変換
+  if (kougo) {
+    sprintf(hour_minute, "%02d:%02d.", timeInfo.tm_hour, timeInfo.tm_min);  //時間に変換
   } else {
-    sprintf(hour_minute, "%02d:%02d", timeInfo.tm_hour, timeInfo.tm_min); //時間に変換
+    sprintf(hour_minute, "%02d:%02d", timeInfo.tm_hour, timeInfo.tm_min);  //時間に変換
   }
 
   // fontsizes of values
@@ -146,61 +146,46 @@ void show_time(bool kougo) {
   tft.println(dayofweek[timeInfo.tm_wday]);
 }
 
-void show_temp_humid(void){
+void show_temp_humid(void) {
   // fontsizes of values
   const int datesize = 3;
   const int tempsize = 5;
   const int humidsize = 5;
 
-  if (temperature == ERROR_VALUE || humidity == ERROR_VALUE){
-    /* IF ERROR */ 
-    tft.setTextSize(2);
-    tft.println("\n[ Temperature ]");
-    tft.setTextSize(tempsize);
-    tft.print("ERROR");
+  tft.setTextSize(2);
+  tft.println("\n[ Temperature ]\n");
+  tft.setTextSize(tempsize);
+  if (temperature != ERROR_VALUE) {
+    tft.print(temperature, 2);  // (temp, 小数点以下桁数)
 
-    // display "℃" 
+    // display "℃"
     tft.print(" ");
     tft.setTextSize(tempsize - 2);
     tft.print("o");
     tft.setTextSize(tempsize);
     tft.println("C");
-
-    tft.setTextSize(2);
-    tft.println("\n[ Humidity ]");
-    tft.setTextSize(humidsize);
+  } else {
     tft.print("ERROR");
-    tft.println(" %");
   }
-  else
-  {
-    tft.setTextSize(2);
-    tft.println("\n[ Temperature ]\n");
-    tft.setTextSize(tempsize);
-    tft.print(temperature, 2); // (temp, 小数点以下桁数)
 
-    // display "℃" 
-    tft.print(" ");
-    tft.setTextSize(tempsize - 2);
-    tft.print("o");
-    tft.setTextSize(tempsize);
-    tft.println("C");
-
-    tft.setTextSize(2);
-    tft.println("\n[ Humidity ]\n");
-    tft.setTextSize(humidsize);
+  tft.setTextSize(2);
+  tft.println("\n[ Humidity ]\n");
+  tft.setTextSize(humidsize);
+  if (humidity != ERROR_VALUE) {
     tft.print(humidity, 2);
     tft.println(" %");
-
-    // also print to serial
-    Serial.print("[AHT25] temperature: ");
-    Serial.print(temperature);
-    Serial.print(", humidity: ");
-    Serial.println(humidity);
+  } else {
+    tft.print("ERROR");
   }
+  
+  // also print to serial
+  Serial.print("[AHT25] temperature: ");
+  Serial.print(temperature);
+  Serial.print(", humidity: ");
+  Serial.println(humidity);
 }
 
-void SendToAmbient(void){
+void SendToAmbient(void) {
   ambient.set(1, (float)temperature);
   ambient.set(2, (float)humidity);
 
@@ -208,22 +193,22 @@ void SendToAmbient(void){
   Serial.println(" [AMBIENT] Data send to ambient");
 }
 
-void SendToGoogleApps(void){
+void SendToGoogleApps(void) {
   //Google Spreadsheet
   String urlFinal = gasUrl + "?temperature=" + String(temperature) + "&humidity=" + String(humidity);
 
   HTTPClient http;
   http.begin(urlFinal.c_str());
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  int httpCode = http.GET(); 
+  int httpCode = http.GET();
   Serial.print(" [GAS] HTTP Status Code: ");
   Serial.println(httpCode);
   //---------------------------------------------------------------------
   //getting response from google sheet
   String payload;
   if (httpCode > 0) {
-      payload = http.getString();
-      Serial.println(" [GAS] Payload: "+payload);    
+    payload = http.getString();
+    Serial.println(" [GAS] Payload: " + payload);
   }
   //---------------------------------------------------------------------
   http.end();
@@ -257,7 +242,7 @@ void setup(void) {
   Serial.println(" [AHT25] AHT25 has configured");
 
   //  チャネルIDとライトキーを指定してAmbientの初期化
-  if(ENABLE_AMBIENT) ambient.begin(channelId, writeKey, &client);  
+  if (ENABLE_AMBIENT) ambient.begin(channelId, writeKey, &client);
 
   Serial.println(F("<< Initialized >>"));
 }
@@ -265,7 +250,7 @@ void setup(void) {
 void loop() {
   // time
   if ((WiFi.status() == WL_CONNECTED)) {
-  // measure Temperature and humidity
+    // measure Temperature and humidity
     updateAht25();
     Serial.println("[AHT25] Measured");
 
@@ -275,9 +260,9 @@ void loop() {
     // clear display
     Serial.println("[ FILL with BLACK ]");
     tft.fillScreen(ST77XX_BLACK);
-    
+
     // wifi connected
-    long rssi = WiFi.RSSI(); // rcvd sig strength indicator [dBm]
+    long rssi = WiFi.RSSI();  // rcvd sig strength indicator [dBm]
     tft.setTextColor(ST77XX_GREEN);
     tft.setCursor(0, 0);
     tft.setTextSize(2);
@@ -290,19 +275,19 @@ void loop() {
 
     // time and date
     show_time(kougo);
-    
+
     show_temp_humid();
 
     // send to ambient (temp. and humid.)
     // あんまりデータ送るとよくないので，2回に1回にする．
-    if(kougo){
-      if(ENABLE_AMBIENT) SendToAmbient();
-      if(ENABLE_GAS) SendToGoogleApps();
+    if (kougo) {
+      if (ENABLE_AMBIENT) SendToAmbient();
+      if (ENABLE_GAS) SendToGoogleApps();
     }
 
     kougo = kougo ? false : true;
     delay(29965);
-    
+
   } else {
     Serial.println(F("Wi-Fi not connected"));
     tft.setTextWrap(false);
@@ -313,5 +298,3 @@ void loop() {
     tft.println("Wifi Disconnected");
   }
 }
-
-
