@@ -179,9 +179,9 @@ void show_temp_humid(void) {
   }
   
   // also print to serial
-  Serial.print("[AHT25] temperature: ");
+  Serial.print(F("[AHT25] temperature: "));
   Serial.print(temperature);
-  Serial.print(", humidity: ");
+  Serial.print(F(", humidity: "));
   Serial.println(humidity);
 }
 
@@ -190,7 +190,7 @@ void SendToAmbient(void) {
   ambient.set(2, (float)humidity);
 
   ambient.send();
-  Serial.println(" [AMBIENT] Data send to ambient");
+  Serial.println(F(" [AMBIENT] Data send to ambient"));
 }
 
 void SendToGoogleApps(void) {
@@ -201,18 +201,19 @@ void SendToGoogleApps(void) {
   http.begin(urlFinal.c_str());
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   int httpCode = http.GET();
-  Serial.print(" [GAS] HTTP Status Code: ");
+  Serial.print(F(" [GAS] HTTP Status Code: "));
   Serial.println(httpCode);
   //---------------------------------------------------------------------
   //getting response from google sheet
   String payload;
   if (httpCode > 0) {
     payload = http.getString();
-    Serial.println(" [GAS] Payload: " + payload);
+    Serial.print(F(" [GAS] Payload: "));
+    Serial.println(payload);
   }
   //---------------------------------------------------------------------
   http.end();
-  Serial.println(" [GAS] Send data to Google SpreadSheet");
+  Serial.println(F(" [GAS] Send data to Google SpreadSheet"));
 }
 
 void setup(void) {
@@ -226,20 +227,20 @@ void setup(void) {
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.println(" [Wi-Fi] Connecting to WiFi..");
+    Serial.println(F(" [Wi-Fi] Connecting to WiFi.."));
   }
-  Serial.print(" [Wi-Fi] Connected to the WiFi network, IP: ");
+  Serial.print(F(" [Wi-Fi] Connected to the WiFi network, IP: "));
   Serial.println(WiFi.localIP());
 
   // NTP setting
   configTime(9 * 3600L, 0, "ntp.nict.jp", "time.google.com", "ntp.jst.mfeed.ad.jp");
 
-  Serial.println(" [NTP] NTP has configured");
+  Serial.println(F(" [NTP] NTP has configured"));
 
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
   initAht25();
 
-  Serial.println(" [AHT25] AHT25 has configured");
+  Serial.println(F(" [AHT25] AHT25 has configured"));
 
   //  チャネルIDとライトキーを指定してAmbientの初期化
   if (ENABLE_AMBIENT) ambient.begin(channelId, writeKey, &client);
@@ -252,13 +253,13 @@ void loop() {
   if ((WiFi.status() == WL_CONNECTED)) {
     // measure Temperature and humidity
     updateAht25();
-    Serial.println("[AHT25] Measured");
+    Serial.println(F("[AHT25] Measured"));
 
     delay(30);
 
     tft.setTextWrap(false);
     // clear display
-    Serial.println("[ FILL with BLACK ]");
+    Serial.println(F("[ FILL with BLACK ]"));
     tft.fillScreen(ST77XX_BLACK);
 
     // wifi connected
@@ -269,9 +270,9 @@ void loop() {
     tft.print("Wi-Fi [");
     tft.print(rssi);
     tft.println(" dBm]");
-    Serial.print("[Wi-Fi] RSSI: ");
+    Serial.print(F("[Wi-Fi] RSSI: "));
     Serial.print(rssi);
-    Serial.println("dBm");
+    Serial.println(F("dBm"));
 
     // time and date
     show_time(kougo);
